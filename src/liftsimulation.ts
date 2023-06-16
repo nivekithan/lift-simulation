@@ -58,7 +58,7 @@ export class LiftSimulation {
   #nearestLiftToFloor(floorNo: number) {
     let nearestLift: null | {
       currentFloorNo: number;
-      direction: "up" | "down" | "idle";
+      isFloorOnPreferredDirection: boolean;
       liftNo: number;
     } = null;
 
@@ -67,11 +67,17 @@ export class LiftSimulation {
 
       const liftCurrentFloor = this.#getCurrentFloorNo(i);
       const liftDirection = liftStop.currentDirection;
+      const isFloorOnPreferredDirection =
+        liftDirection === "idle"
+          ? true
+          : liftCurrentFloor - floorNo > 0
+          ? liftDirection === "down"
+          : liftDirection === "up";
 
       if (nearestLift === null) {
         nearestLift = {
           currentFloorNo: liftCurrentFloor,
-          direction: liftDirection,
+          isFloorOnPreferredDirection,
           liftNo: i,
         };
         continue;
@@ -86,10 +92,22 @@ export class LiftSimulation {
       // It means distance between current lift and target floor is lower than lift from nearestLift variable
       const isDistanceDifferencePositive = distanceDifference > 0;
 
+      if (
+        isFloorOnPreferredDirection &&
+        !nearestLift.isFloorOnPreferredDirection
+      ) {
+        nearestLift = {
+          currentFloorNo: liftCurrentFloor,
+          isFloorOnPreferredDirection,
+          liftNo: i,
+        };
+        continue;
+      }
+
       if (isDistanceDifferencePositive) {
         nearestLift = {
           currentFloorNo: liftCurrentFloor,
-          direction: liftDirection,
+          isFloorOnPreferredDirection,
           liftNo: i,
         };
         continue;
@@ -98,10 +116,13 @@ export class LiftSimulation {
       if (isDistanceDifferenceEqual) {
         // In this case if one of the lift has direction "idle" then it will take priority
 
-        if (nearestLift.direction !== "idle" && liftDirection === "idle") {
+        if (
+          !nearestLift.isFloorOnPreferredDirection &&
+          isFloorOnPreferredDirection
+        ) {
           nearestLift = {
             currentFloorNo: liftCurrentFloor,
-            direction: liftDirection,
+            isFloorOnPreferredDirection,
             liftNo: i,
           };
         }
