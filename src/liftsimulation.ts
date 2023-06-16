@@ -171,6 +171,8 @@ export class LiftSimulation {
 
     liftStop.stops.delete(currnetFloorNo);
 
+    console.log({liftStop, liftNo})
+
     if (liftStop.stops.size === 0) {
       liftStop.currentDirection = "idle";
       return;
@@ -245,7 +247,8 @@ export class LiftSimulation {
 
   async #setLiftToFloor(liftNo: number, floorNo: number) {
     try {
-      const newBottomValue = `${(floorNo - 1) * 10}%`;
+      const newBottomValue = `${(floorNo - 1) * (100 / this.#noOfFloors)}%`;
+      console.log({ newBottomValue });
       const currentValue = `${this.#getCurrentBottomValue(liftNo)}`;
 
       this.#liftAnimationState.set(liftNo, true);
@@ -274,8 +277,13 @@ export class LiftSimulation {
   }
 
   #getCurrentFloorNo(liftNo: number) {
-    const currnetFloorNo =
-      parseInt(this.#getCurrentBottomValue(liftNo).replace("%", "")) / 10 + 1;
+    const currnetFloorNo = Math.round(
+      parseInt(this.#getCurrentBottomValue(liftNo).replace("%", "")) /
+        (100 / this.#noOfFloors) +
+        1
+    );
+
+    console.log({ currnetFloorNo });
 
     return currnetFloorNo;
   }

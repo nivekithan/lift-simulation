@@ -1,0 +1,36 @@
+#form-container {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+}
+
+#form-container > div {
+  border: 2px solid black;
+  padding: 30px;
+  border-radius: 4px;
+}
+
+.simulation-form {
+  display: flex;
+  flex-direction: column;
+  row-gap: 10px;
+}
+
+input {
+  border: 1px solid black;
+  padding: 4px 6px;
+  border-radius: 4px;
+}
+
+h1 {
+  font-size: large;
+  font-weight: bold;
+}
+
+.submit-button {
+  padding: 4px 6px;
+  border-radius: 4px;
+  background-color: aquamarine;
+  color: black;
+  cursor: pointer;
+}

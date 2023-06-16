@@ -4,10 +4,34 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + TS</title>
+    <title>Lift Simulation</title>
   </head>
   <body>
-    <div id="floor-container"></div>
+    <div id="form-container">
+      <div>
+        <h1>Select values for simulation</h1>
+        <form class="simulation-form">
+          <label for="floors-input">Number of floors:</label>
+          <input
+            type="number"
+            id="floors-input"
+            name="floors"
+            min="1"
+            max="50"
+          />
+          <label for="lifts-input">Number of Lifts:</label>
+          <input
+            type="number"
+            required
+            min="1"
+            max="20"
+            id="lifts-input"
+            name="lifts"
+          />
+          <button type="submit" class="submit-button">Submit</button>
+        </form>
+      </div>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

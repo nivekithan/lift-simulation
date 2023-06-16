@@ -1,14 +1,26 @@
-import "./style.css";
 import "./preflight.css";
-import "./style.css";
+import "./form.css";
+import "./simulation.css";
 import { LiftSimulation } from "./liftsimulation";
 
-const simulator = new LiftSimulation(10, 3);
+const url = new URL(window.location.href);
 
-const floorContainer = document.getElementById("floor-container");
+if (url.searchParams.has("floors") && url.searchParams.has("lifts")) {
+  const isFormContainerPresent = document.getElementById("form-container");
 
-if (!floorContainer) {
-  throw new Error("There is no element with id floor-container");
+  if (isFormContainerPresent) {
+    const formContainer = isFormContainerPresent;
+    formContainer.innerHTML = "";
+    formContainer.id = "floor-container";
+  }
+
+  const numberOfFloors = parseInt(url.searchParams.get("floors") || "");
+  const numberOfLifts = parseInt(url.searchParams.get("lifts") || "");
+
+  const simulator = new LiftSimulation(numberOfFloors, numberOfLifts);
+  const floorContainer = document.getElementById("floor-container");
+  if (!floorContainer) {
+    throw new Error("There is no element with id floor-container");
+  }
+  simulator.render(floorContainer);
 }
-
-simulator.render(floorContainer);
