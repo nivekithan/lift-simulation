@@ -1,9 +1,10 @@
 #floor-container {
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   flex-direction: column-reverse;
   font-size: 12px;
   position: relative;
+  overflow-x: auto;
 }
 
 .floor {
@@ -19,12 +20,18 @@
   flex-direction: column;
   justify-content: space-between;
   align-self: normal;
-  width: 40px;
+  width: 60px;
 }
 
 .lift-button {
   padding: 1px 2px;
   border: 1px solid red;
+  font-size: 16px;
+}
+
+.floor-no {
+  align-self: center;
+  font-size: 24px;
 }
 
 .lift-container {
@@ -33,8 +40,8 @@
 }
 
 .lift {
-  height: 40px;
-  width: 20px;
+  height: 60px;
+  width: 40px;
   background-color: aquamarine;
   position: absolute;
 }

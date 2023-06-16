@@ -171,7 +171,7 @@ export class LiftSimulation {
 
     liftStop.stops.delete(currnetFloorNo);
 
-    console.log({liftStop, liftNo})
+    console.log({ liftStop, liftNo });
 
     if (liftStop.stops.size === 0) {
       liftStop.currentDirection = "idle";
@@ -307,6 +307,7 @@ export class LiftSimulation {
         innerHTML += `<div class="floor">
   <div class="lift-button-container">
         <button class="lift-button" type="button" id="up-${i}">Up</button>
+        <p class="floor-no">${i}</p>
         <button class="lift-button" type="button" id="down-${i}">Down</button>
   </div>
 </div>`;
@@ -314,7 +315,7 @@ export class LiftSimulation {
 
       for (let i = 1; i <= this.#noOfLifts; i++) {
         innerHTML += `<div class="lift" style="left: ${
-          i * 40 + 20
+          i * 70 + 20
         }px; bottom: 0%" id="lift-no-${i}"></div>`;
       }
       return innerHTML;

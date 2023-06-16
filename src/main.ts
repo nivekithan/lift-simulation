@@ -17,6 +17,12 @@ if (url.searchParams.has("floors") && url.searchParams.has("lifts")) {
   const numberOfFloors = parseInt(url.searchParams.get("floors") || "");
   const numberOfLifts = parseInt(url.searchParams.get("lifts") || "");
 
+  if (numberOfFloors <= 0 || numberOfLifts <= 0) {
+    url.searchParams.delete("floors");
+    url.searchParams.delete("lifts");
+    window.location.href = url.toString();
+  }
+
   const simulator = new LiftSimulation(numberOfFloors, numberOfLifts);
   const floorContainer = document.getElementById("floor-container");
   if (!floorContainer) {
