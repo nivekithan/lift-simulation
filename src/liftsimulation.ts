@@ -154,6 +154,7 @@ export class LiftSimulation {
     if (isAnimating) {
       return;
     }
+    console.log("Starting animation");
 
     const currentBottomValue = this.#getCurrentBottomValue(liftNo);
     const currnetFloorNo = this.#getCurrentFloorNo(liftNo);
@@ -165,8 +166,10 @@ export class LiftSimulation {
     const liftStop = this.#liftStops.get(liftNo)!;
 
     if (liftStop.stops.has(currnetFloorNo)) {
+      this.#liftAnimationState.set(liftNo, true);
       // Do the opening door animation here
       await new Promise((r) => setTimeout(r, 2000));
+      this.#liftAnimationState.set(liftNo, false);
     }
 
     liftStop.stops.delete(currnetFloorNo);
