@@ -168,7 +168,7 @@ export class LiftSimulation {
     if (liftStop.stops.has(currnetFloorNo)) {
       this.#liftAnimationState.set(liftNo, true);
       // Do the opening door animation here
-      await new Promise((r) => setTimeout(r, 2000));
+      await this.#openAndCloseLiftDoor(liftNo);
       this.#liftAnimationState.set(liftNo, false);
     }
 
@@ -274,6 +274,30 @@ export class LiftSimulation {
     }
   }
 
+  async #openAndCloseLiftDoor(liftNo: number) {
+    const leftDoor = this.#getLeftDoor(liftNo);
+    const rightDoor = this.#getRightDoor(liftNo);
+
+    const leftDoorAnimation = leftDoor.animate(
+      [
+        { transform: `translateX(0%)` },
+        { transform: `translateX(-100%)` },
+        { transform: `translateX(0%)` },
+      ],
+      { duration: 5_000 }
+    ).finished;
+    const rightDoorAnimation = rightDoor.animate(
+      [
+        { transform: `translateX(0%)` },
+        { transform: `translateX(100%)` },
+        { transform: `translateX(0%)` },
+      ],
+      { duration: 5_000 }
+    ).finished;
+
+    return Promise.all([leftDoorAnimation, rightDoorAnimation]);
+  }
+
   #getCurrentBottomValue(liftNo: number) {
     const bottomValue = this.#getLift(liftNo).style.bottom;
     return bottomValue;
@@ -286,13 +310,19 @@ export class LiftSimulation {
         1
     );
 
-    console.log({ currnetFloorNo });
-
     return currnetFloorNo;
   }
 
   #getLift(no: number) {
     return document.getElementById(`lift-no-${no}`)!;
+  }
+
+  #getLeftDoor(no: number) {
+    return document.getElementById(`left-door-${no}`)!;
+  }
+
+  #getRightDoor(no: number) {
+    return document.getElementById(`right-door-${no}`)!;
   }
 
   /**
@@ -317,9 +347,12 @@ export class LiftSimulation {
       }
 
       for (let i = 1; i <= this.#noOfLifts; i++) {
-        innerHTML += `<div class="lift" style="left: ${
-          i * 70 + 20
-        }px; bottom: 0%" id="lift-no-${i}"></div>`;
+        innerHTML +=
+          // prettier-ignore
+          `<div class="lift" style="left: ${i * 70 + 20 }px; bottom: 0%" id="lift-no-${i}">
+           <div id="left-door-${i}" class="lift-door"></div>
+           <div id="right-door-${i}" class="lift-door"></div>
+        </div>`;
       }
       return innerHTML;
     })();

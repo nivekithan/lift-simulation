@@ -44,4 +44,12 @@
   width: 40px;
   background-color: aquamarine;
   position: absolute;
+  display: flex;
+  overflow: hidden;
 }
+
+.lift-door {
+  background-color: blue;
+  flex: 1 1 0;
+}
+
