@@ -354,6 +354,8 @@ export class LiftSimulation {
            <div id="right-door-${i}" class="lift-door"></div>
         </div>`;
       }
+
+      innerHTML += `<a class="go-back-link" href="/">Go back</a>`
       return innerHTML;
     })();
 

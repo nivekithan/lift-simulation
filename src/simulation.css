@@ -53,3 +53,14 @@
   flex: 1 1 0;
 }
 
+
+.go-back-link {
+  position: fixed;
+  right: 20px;
+ top: 20px;
+ font-size: 14px;
+ border: 1px solid aquamarine;
+ padding:  3px 6px;
+ border-radius: 4px;
+ background-color: aquamarine;
+}
