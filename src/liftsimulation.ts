@@ -4,22 +4,17 @@ export class LiftSimulation {
   #noOfFloors: number;
   #noOfLifts: number;
 
-  #liftStops: Map<
-    number,
-    { stops: Set<number>; currentDirection: "up" | "down" | "idle" }
-  >;
-
-  #liftAnimationState: Map<number, boolean>;
+  #liftState: Map<number, { state: "stopped" | "animating"; floorNo: number }>;
+  #requestQueue: Array<number>;
 
   constructor(noOfFloors: number, noOfLifts: number) {
     this.#noOfFloors = noOfFloors;
     this.#noOfLifts = noOfLifts;
-    this.#liftStops = new Map();
-    this.#liftAnimationState = new Map();
+    this.#liftState = new Map();
+    this.#requestQueue = [];
 
-    for (let i = 0; i <= noOfLifts; i++) {
-      this.#liftStops.set(i, { stops: new Set(), currentDirection: "idle" });
-      this.#liftAnimationState.set(i, false);
+    for (let i = 1; i <= noOfLifts; i++) {
+      this.#liftState.set(i, { state: "stopped", floorNo: i });
     }
   }
 
@@ -28,224 +23,141 @@ export class LiftSimulation {
       document
         .getElementById(`up-${i}`)
         ?.addEventListener("click", async () => {
-          const isAlreadyPartOfStop = this.#isFloorAlreadyPartOfStop(i);
+          if (!this.#isRequestUnique(i)) {
+            return;
+          }
+          const nearestLift = this.#nearestLiftToFloor(i);
 
-          if (isAlreadyPartOfStop) {
+          if (nearestLift === null) {
+            this.#requestQueue.push(i);
             return;
           }
 
-          const liftNo = this.#nearestLiftToFloor(i).liftNo;
-          this.#liftStops.get(liftNo)!.stops.add(i);
-          await this.#startLift(liftNo);
+          this.#liftState.set(nearestLift.liftNo, {
+            floorNo: i,
+            state: "animating",
+          });
+
+          this.#startLift(nearestLift.liftNo);
         });
 
       document
         .getElementById(`down-${i}`)
         ?.addEventListener("click", async () => {
-          const isAlreadyPartOfStop = this.#isFloorAlreadyPartOfStop(i);
-
-          if (isAlreadyPartOfStop) {
+          if (!this.#isRequestUnique(i)) {
             return;
           }
 
-          const liftNo = this.#nearestLiftToFloor(i).liftNo;
-          this.#liftStops.get(liftNo)!.stops.add(i);
-          await this.#startLift(liftNo);
+          const nearestLift = this.#nearestLiftToFloor(i);
+
+          if (nearestLift === null) {
+            this.#requestQueue.push(i);
+            return;
+          }
+
+          this.#liftState.set(nearestLift.liftNo, {
+            floorNo: i,
+            state: "animating",
+          });
+
+          this.#startLift(nearestLift.liftNo);
         });
     }
   }
+  #isRequestUnique(floorNo: number) {
+    for (let liftNo = 1; liftNo <= this.#noOfLifts; liftNo++) {
+      const liftState = this.#liftState.get(liftNo)!;
 
+      if (liftState.state === "animating" && liftState.floorNo === floorNo) {
+        return false;
+      } else if (
+        liftState.state === "stopped" &&
+        liftState.floorNo === floorNo
+      ) {
+        this.#liftState.set(liftNo, { floorNo: floorNo, state: "animating" });
+        this.#startLift(liftNo);
+        return false;
+      }
+    }
+
+    return !this.#requestQueue.includes(floorNo);
+  }
   #nearestLiftToFloor(floorNo: number) {
+    const freeLifts: Array<{
+      state: "stopped";
+      floorNo: number;
+      liftNo: number;
+    }> = [];
+
+    for (let liftNo = 1; liftNo <= this.#noOfLifts; liftNo++) {
+      const liftState = this.#liftState.get(liftNo)!;
+
+      if (liftState.state === "stopped") {
+        freeLifts.push({ ...liftState, state: liftState.state, liftNo });
+      }
+    }
+
+    if (freeLifts.length === 0) {
+      return null;
+    }
+
     let nearestLift: null | {
-      currentFloorNo: number;
-      isFloorOnPreferredDirection: boolean;
+      distance: number;
       liftNo: number;
     } = null;
 
-    for (let i = 1; i <= this.#noOfLifts; i++) {
-      const liftStop = this.#liftStops.get(i)!;
-
-      const liftCurrentFloor = this.#getCurrentFloorNo(i);
-      const liftDirection = liftStop.currentDirection;
-      const isFloorOnPreferredDirection =
-        liftDirection === "idle"
-          ? true
-          : liftCurrentFloor - floorNo > 0
-          ? liftDirection === "down"
-          : liftDirection === "up";
-
+    freeLifts.forEach(({ floorNo: liftFloorNo, liftNo }) => {
+      const currentLiftDistance = Math.abs(liftFloorNo - floorNo);
       if (nearestLift === null) {
-        nearestLift = {
-          currentFloorNo: liftCurrentFloor,
-          isFloorOnPreferredDirection,
-          liftNo: i,
-        };
-        continue;
+        nearestLift = { distance: currentLiftDistance, liftNo };
+        return;
       }
 
-      const distanceDifference =
-        Math.abs(nearestLift.currentFloorNo - floorNo) -
-        Math.abs(floorNo - liftCurrentFloor);
+      const isNearby = nearestLift.distance > currentLiftDistance;
 
-      const isDistanceDifferenceEqual = distanceDifference === 0;
-
-      // It means distance between current lift and target floor is lower than lift from nearestLift variable
-      const isDistanceDifferencePositive = distanceDifference > 0;
-
-      if (
-        isFloorOnPreferredDirection &&
-        !nearestLift.isFloorOnPreferredDirection
-      ) {
-        nearestLift = {
-          currentFloorNo: liftCurrentFloor,
-          isFloorOnPreferredDirection,
-          liftNo: i,
-        };
-        continue;
+      if (isNearby) {
+        nearestLift = { distance: currentLiftDistance, liftNo };
+        return;
       }
+    });
 
-      if (isDistanceDifferencePositive) {
-        nearestLift = {
-          currentFloorNo: liftCurrentFloor,
-          isFloorOnPreferredDirection,
-          liftNo: i,
-        };
-        continue;
-      }
-
-      if (isDistanceDifferenceEqual) {
-        // In this case if one of the lift has direction "idle" then it will take priority
-
-        if (
-          !nearestLift.isFloorOnPreferredDirection &&
-          isFloorOnPreferredDirection
-        ) {
-          nearestLift = {
-            currentFloorNo: liftCurrentFloor,
-            isFloorOnPreferredDirection,
-            liftNo: i,
-          };
-        }
-        continue;
-      }
-    }
-    if (nearestLift === null) {
-      throw new Error("Unreachable");
-    }
-
-    return nearestLift;
-  }
-
-  #isFloorAlreadyPartOfStop(floorNo: number) {
-    for (let i = 1; i <= this.#noOfLifts; i++) {
-      const liftStop = this.#liftStops.get(i)!;
-
-      if (liftStop.stops.has(floorNo)) {
-        return true;
-      }
-    }
-
-    return false;
+    return nearestLift as null | { distance: number; liftNo: number };
   }
 
   async #startLift(liftNo: number) {
-    const isAnimating = this.#liftAnimationState.get(liftNo);
+    const currentFloorNo = this.#getCurrentFloorNo(liftNo);
+    const destinationFloorNo = this.#liftState.get(liftNo)!.floorNo;
 
-    if (isAnimating) {
-      return;
-    }
-    console.log("Starting animation");
+    const isDestinationReached = currentFloorNo === destinationFloorNo;
 
-    const currentBottomValue = this.#getCurrentBottomValue(liftNo);
-    const currnetFloorNo = this.#getCurrentFloorNo(liftNo);
-
-    if (Number.isNaN(currnetFloorNo)) {
-      throw new Error(`Invalid bottomValue ${currentBottomValue}`);
-    }
-
-    const liftStop = this.#liftStops.get(liftNo)!;
-
-    if (liftStop.stops.has(currnetFloorNo)) {
-      this.#liftAnimationState.set(liftNo, true);
-      // Do the opening door animation here
+    if (isDestinationReached) {
       await this.#openAndCloseLiftDoor(liftNo);
-      this.#liftAnimationState.set(liftNo, false);
-    }
+      const anyMoreRequest = this.#requestQueue.length !== 0;
 
-    liftStop.stops.delete(currnetFloorNo);
+      if (anyMoreRequest) {
+        const nextRequest = this.#requestQueue.shift()!;
 
-    console.log({ liftStop, liftNo });
-
-    if (liftStop.stops.size === 0) {
-      liftStop.currentDirection = "idle";
-      return;
-    }
-
-    if (liftStop.currentDirection === "up") {
-      let shouldGoUp = false;
-
-      liftStop.stops.forEach((floorNo) => {
-        if (floorNo > currnetFloorNo) {
-          shouldGoUp = true;
-        }
-      });
-
-      if (shouldGoUp) {
-        this.#setLiftToFloor(liftNo, currnetFloorNo + 1);
+        this.#liftState.set(liftNo, {
+          state: "animating",
+          floorNo: nextRequest,
+        });
+        this.#startLift(liftNo);
         return;
       }
 
-      this.#setLiftToFloor(liftNo, currnetFloorNo - 1);
-      liftStop.currentDirection = "down";
-      return;
-    }
-
-    if (liftStop.currentDirection === "down") {
-      let shouldGoDown = false;
-
-      liftStop.stops.forEach((floorNo) => {
-        if (floorNo < currnetFloorNo) {
-          shouldGoDown = true;
-        }
+      this.#liftState.set(liftNo, {
+        state: "stopped",
+        floorNo: currentFloorNo,
       });
 
-      if (shouldGoDown) {
-        this.#setLiftToFloor(liftNo, currnetFloorNo - 1);
-        return;
-      }
-
-      this.#setLiftToFloor(liftNo, currnetFloorNo + 1);
-      liftStop.currentDirection = "up";
       return;
     }
+    const nextFloorNo =
+      currentFloorNo > destinationFloorNo
+        ? currentFloorNo - 1
+        : currentFloorNo + 1;
 
-    if (liftStop.currentDirection === "idle") {
-      let nearestStop: null | number = null;
-
-      liftStop.stops.forEach((floorNo) => {
-        if (nearestStop === null) {
-          nearestStop = floorNo;
-        } else if (
-          Math.abs(nearestStop - currnetFloorNo) >
-          Math.abs(floorNo - currnetFloorNo)
-        ) {
-          nearestStop = floorNo;
-        }
-      });
-
-      if (nearestStop === null) throw new Error(`There no elements in set`);
-
-      const directionToGo = nearestStop > currnetFloorNo ? "up" : "down";
-
-      if (directionToGo === "up") {
-        this.#setLiftToFloor(liftNo, currnetFloorNo + 1);
-        liftStop.currentDirection = "up";
-      } else {
-        this.#setLiftToFloor(liftNo, currnetFloorNo - 1);
-        liftStop.currentDirection = "down";
-      }
-      return;
-    }
+    this.#setLiftToFloor(liftNo, nextFloorNo);
   }
 
   async #setLiftToFloor(liftNo: number, floorNo: number) {
@@ -254,7 +166,6 @@ export class LiftSimulation {
       console.log({ newBottomValue });
       const currentValue = `${this.#getCurrentBottomValue(liftNo)}`;
 
-      this.#liftAnimationState.set(liftNo, true);
       const animation = this.#getLift(liftNo).animate(
         [{ bottom: currentValue }, { bottom: newBottomValue }],
         {
@@ -267,7 +178,6 @@ export class LiftSimulation {
       await animation.finished;
       console.log("Animation finished");
       animation.commitStyles();
-      this.#liftAnimationState.set(liftNo, false);
       this.#startLift(liftNo);
     } catch (err) {
       console.log(err);
@@ -355,7 +265,7 @@ export class LiftSimulation {
         </div>`;
       }
 
-      innerHTML += `<a class="go-back-link" href="/">Go back</a>`
+      innerHTML += `<a class="go-back-link" href="/">Go back</a>`;
       return innerHTML;
     })();
 
