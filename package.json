@@ -4,15 +4,15 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port 5273",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "deploy": "pnpm run build && npx wrangler pages deploy --project-name=lift-simulation ./dist"
+    "deploy": "pnpm run build && npx wrangler pages deploy --project-name=lift-simulataion ./dist"
   },
   "devDependencies": {
     "typescript": "^5.0.2",
     "vite": "^4.3.9",
-    "wrangler": "^3.1.0"
+    "wrangler": "3.1.0"
   },
   "engines": {
     "node": "v18.5.0"
